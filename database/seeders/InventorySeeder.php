@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\Inventory;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class InventorySeeder extends Seeder
@@ -23,6 +22,8 @@ class InventorySeeder extends Seeder
             'selling_price' => 55000.00,
             'discount_price' => null,
             'manufacturer' => 'Mountain Brew Co.',
+            'packaging_type' => 'Single Unit',
+            'status' => 'active',
         ]);
 
         // Product 2: Organic Green Tea
@@ -35,6 +36,8 @@ class InventorySeeder extends Seeder
             'selling_price' => 48000.00,
             'discount_price' => 40000.00,
             'manufacturer' => 'Harmony Teas',
+            'packaging_type' => 'Carton (12 packs)',
+            'status' => 'active',
         ]);
 
         // Product 3: Sparkling Mineral Water
@@ -47,6 +50,8 @@ class InventorySeeder extends Seeder
             'selling_price' => 75000.00,
             'discount_price' => 65000.00,
             'manufacturer' => 'Alpine Springs',
+            'packaging_type' => 'Case (24 cans)',
+            'status' => 'active',
         ]);
 
         // Product 4: Cold-Pressed Orange Juice
@@ -59,6 +64,36 @@ class InventorySeeder extends Seeder
             'selling_price' => 33000.00,
             'discount_price' => null,
             'manufacturer' => 'Fresh Squeeze Inc.',
+            'packaging_type' => 'Bottle (500ml)',
+            'status' => 'active',
+        ]);
+
+        // Add a product with inactive status
+        Inventory::create([
+            'name' => 'Seasonal Berry Smoothie',
+            'description' => 'Limited edition smoothie made with seasonal berries. Rich in vitamins and antioxidants. Perfect refreshment for hot days.',
+            'category' => 'Beverages',
+            'quantity' => 5,
+            'cost_price' => 15000.00,
+            'selling_price' => 28000.00,
+            'discount_price' => null,
+            'manufacturer' => 'Fruit Fusion Co.',
+            'packaging_type' => 'Bottle (350ml)',
+            'status' => 'inactive',
+        ]);
+
+        // Add a product with discontinued status
+        Inventory::create([
+            'name' => 'Classic Cola',
+            'description' => 'Our original cola formula that has been replaced with a new improved recipe. This classic version is no longer in production.',
+            'category' => 'Beverages',
+            'quantity' => 10,
+            'cost_price' => 8000.00,
+            'selling_price' => 15000.00,
+            'discount_price' => 12000.00,
+            'manufacturer' => 'Refreshment Industries',
+            'packaging_type' => 'Can (330ml)',
+            'status' => 'discontinued',
         ]);
     }
 }

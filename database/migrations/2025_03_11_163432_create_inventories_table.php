@@ -16,11 +16,13 @@ return new class extends Migration
             $table->string('name');
             $table->text('description')->nullable();
             $table->string('category')->nullable();
+            $table->string('packaging_type')->nullable();    
             $table->integer('quantity')->default(0);
             $table->decimal('cost_price', 10, 2)->nullable();
             $table->decimal('selling_price', 10, 2)->nullable();
             $table->decimal('discount_price', 10, 2)->nullable();
             $table->string('manufacturer')->nullable();
+            $table->enum('status', ['active', 'inactive', 'discontinued'])->default('active');
             $table->timestamps();
             $table->softDeletes(); 
         });

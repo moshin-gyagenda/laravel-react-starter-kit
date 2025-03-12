@@ -29,7 +29,7 @@ interface Inventory {
   id: number
   name: string
   description: string | null
-  category: string | null
+  packaging_type: string | null
   quantity: number
   cost_price: number | null
   selling_price: number | null
@@ -47,7 +47,7 @@ export default function Inventory({ inventories = [] }: Props) {
   const filteredInventories = inventories.filter(
     (item) =>
       item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.packaging_type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.manufacturer?.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
@@ -62,10 +62,12 @@ export default function Inventory({ inventories = [] }: Props) {
 
       <div className="container mx-auto py-6 px-4 sm:px-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-          <h1 className="text-2xl font-bold">Inventory Management</h1>
-          <Button>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Add Item
+          <h1 className="text-xl font-bold">Inventory Management</h1>
+          <Button asChild>
+            <a href="/inventory/create">
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Add Item
+            </a>
           </Button>
         </div>
 
@@ -89,20 +91,22 @@ export default function Inventory({ inventories = [] }: Props) {
           <CardContent>
             {inventories.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12">
-                <PlaceholderPattern className="h-48 w-48 /30" />
-                <h3 className="mt-4 text-lg font-medium">No inventory items</h3>
-                <p className="mt-2 text-sm  text-center max-w-sm">
+                <PlaceholderPattern className="h-48 w-48 text-muted-foreground/30" />
+                <h3 className="mt-4 text-md font-medium">No inventory items</h3>
+                <p className="mt-2 text-sm text-muted-foreground text-center max-w-sm">
                   You don't have any inventory items yet. Add your first item to get started.
                 </p>
-                <Button className="mt-4">
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Add Your First Item
+                <Button asChild className="mt-4">
+                  <a href="/inventory/create">
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Add Your First Item
+                  </a>
                 </Button>
               </div>
             ) : filteredInventories.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12">
-                <h3 className="mt-4 text-lg font-medium">No matching items</h3>
-                <p className="mt-2 text-sm  text-center max-w-sm">
+                <h3 className="mt-4 text-md font-medium">No matching items</h3>
+                <p className="mt-2 text-sm text-muted-foreground text-center max-w-sm">
                   No inventory items match your search criteria.
                 </p>
                 <Button variant="outline" className="mt-4" onClick={() => setSearchTerm("")}>
@@ -110,23 +114,23 @@ export default function Inventory({ inventories = [] }: Props) {
                 </Button>
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto border rounded-lg">
                 <table className="w-full border-collapse">
                   <thead>
                     <tr className="border-b bg-muted/50">
-                      <th className="py-3 px-4 text-left font-medium ">Name</th>
-                      <th className="py-3 px-4 text-left font-medium  hidden md:table-cell">
-                        Category
+                      <th className="py-3 px-4 text-left font-medium text-muted-foreground">Name</th>
+                      <th className="py-3 px-4 text-left font-medium text-muted-foreground hidden md:table-cell">
+                        Packaging Type
                       </th>
-                      <th className="py-3 px-4 text-right font-medium ">Quantity</th>
-                      <th className="py-3 px-4 text-left font-medium  hidden lg:table-cell">
+                      <th className="py-3 px-4 text-right font-medium text-muted-foreground">Quantity</th>
+                      <th className="py-3 px-4 text-left font-medium text-muted-foreground hidden lg:table-cell">
                         Cost Price
                       </th>
-                      <th className="py-3 px-4 text-right font-medium ">Selling Price</th>
-                      {/* <th className="py-3 px-4 text-left font-medium  hidden md:table-cell">
+                      <th className="py-3 px-4 text-right font-medium text-muted-foreground">Selling Price</th>
+                      {/* <th className="py-3 px-4 text-left font-medium text-muted-foreground hidden md:table-cell">
                         Manufacturer
                       </th> */}
-                      <th className="py-3 px-4 w-[80px]">Action</th>
+                      <th className="py-3 px-4 w-[80px] text-center">Action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -138,26 +142,24 @@ export default function Inventory({ inventories = [] }: Props) {
                         }`}
                       >
                         <td className="py-3 px-4">
-                          <div className="font-medium">
+                          <div className="font-medium text-sm">
                             {item.name}
                             {item.discount_price && (
                               <Badge className="ml-2 bg-green-500 hover:bg-green-600">Sale</Badge>
                             )}
                           </div>
-                          <div className="text-sm  md:hidden">{item.category}</div>
+                          <div className="text-sm text-muted-foreground md:hidden">{item.packaging_type}</div>
                         </td>
-                        <td className="py-3 px-4 hidden md:table-cell">{item.category || "—"}</td>
+                        <td className="py-3 px-4 text-sm hidden md:table-cell">{item.packaging_type || "—"}</td>
                         <td className="py-3 px-4 text-right">
                           <Badge variant={item.quantity > 10 ? "outline" : "destructive"}>{item.quantity}</Badge>
                         </td>
-                        <td className="py-3 px-4 hidden lg:table-cell">{formatCurrency(item.cost_price)}</td>
+                        <td className="py-3 px-4 hidden text-sm lg:table-cell">{formatCurrency(item.cost_price)}</td>
                         <td className="py-3 px-4 text-right">
-                          <div className="flex flex-col items-end">
-                            {formatCurrency(item.selling_price)}
-                          </div>
+                          <div className="flex flex-col text-sm items-end">{formatCurrency(item.selling_price)}</div>
                         </td>
                         {/* <td className="py-3 px-4 hidden md:table-cell">{item.manufacturer || "—"}</td> */}
-                        <td className="py-3 px-4">
+                        <td className="py-3 px-4 text-center">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" className="h-8 w-8 p-0">

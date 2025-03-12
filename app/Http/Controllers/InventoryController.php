@@ -3,8 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Inventory;
-use Inertia\Inertia;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class InventoryController extends Controller
 {
@@ -14,7 +15,9 @@ class InventoryController extends Controller
     public function index()
     {
         $inventories = Inventory::all();
-        return Inertia::render('inventory/index', compact('inventories'));
+        return Inertia::render('inventory.index', [
+            'inventories' => $inventories
+        ]);
     }
 
     /**
@@ -22,7 +25,7 @@ class InventoryController extends Controller
      */
     public function create()
     {
-        //
+        return Inertia::render('inventory.create');
     }
 
     /**
@@ -30,7 +33,52 @@ class InventoryController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        // Validate the request data
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'category' => 'nullable|string|max:255',
+            'packaging_type' => 'nullable|string|max:255',
+            'quantity' => 'required|integer|min:0',
+            'cost_price' => 'nullable|numeric|min:0',
+            'selling_price' => 'required|numeric|min:0',
+            'discount_price' => 'nullable|numeric|min:0',
+            'manufacturer' => 'nullable|string|max:255',
+            'status' => 'required|in:active,inactive,discontinued',
+        ]);
+
+        // Begin a transaction
+        DB::beginTransaction();
+
+        try {
+            // Create the inventory item
+            $inventory = new Inventory();
+            $inventory->name = $request->name;
+            $inventory->description = $request->description;
+            $inventory->category = $request->category === 'none' ? null : $request->category;
+            $inventory->packaging_type = $request->packaging_type === 'none' ? null : $request->packaging_type;
+            $inventory->quantity = $request->quantity;
+            $inventory->cost_price = $request->cost_price;
+            $inventory->selling_price = $request->selling_price;
+            $inventory->discount_price = $request->discount_price;
+            $inventory->manufacturer = $request->manufacturer;
+            $inventory->status = $request->status;
+
+            // Save the inventory item
+            $inventory->save();
+
+            // Commit the transaction
+            DB::commit();
+
+            return redirect()->route('inventory.index')->with('success', 'Inventory item created successfully.');
+
+        } catch (\Exception $e) {
+            // Rollback the transaction if an error occurs
+            DB::rollback();
+
+            return redirect()->back()->with('error', 'Failed to create inventory item: ' . $e->getMessage())
+                ->withInput();
+        }
     }
 
     /**
@@ -38,7 +86,9 @@ class InventoryController extends Controller
      */
     public function show(Inventory $inventory)
     {
-        //
+        return Inertia::render('inventory.show', [
+            'inventory' => $inventory
+        ]);
     }
 
     /**
@@ -46,7 +96,9 @@ class InventoryController extends Controller
      */
     public function edit(Inventory $inventory)
     {
-        //
+        return Inertia::render('inventory.edit', [
+            'inventory' => $inventory
+        ]);
     }
 
     /**
@@ -54,7 +106,51 @@ class InventoryController extends Controller
      */
     public function update(Request $request, Inventory $inventory)
     {
-        //
+        // Validate the request data
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'category' => 'nullable|string|max:255',
+            'packaging_type' => 'nullable|string|max:255',
+            'quantity' => 'required|integer|min:0',
+            'cost_price' => 'nullable|numeric|min:0',
+            'selling_price' => 'required|numeric|min:0',
+            'discount_price' => 'nullable|numeric|min:0',
+            'manufacturer' => 'nullable|string|max:255',
+            'status' => 'required|in:active,inactive,discontinued',
+        ]);
+
+        // Begin a transaction
+        DB::beginTransaction();
+
+        try {
+            // Update the inventory item
+            $inventory->name = $request->name;
+            $inventory->description = $request->description;
+            $inventory->category = $request->category === 'none' ? null : $request->category;
+            $inventory->packaging_type = $request->packaging_type === 'none' ? null : $request->packaging_type;
+            $inventory->quantity = $request->quantity;
+            $inventory->cost_price = $request->cost_price;
+            $inventory->selling_price = $request->selling_price;
+            $inventory->discount_price = $request->discount_price;
+            $inventory->manufacturer = $request->manufacturer;
+            $inventory->status = $request->status;
+
+            // Save the inventory item
+            $inventory->save();
+
+            // Commit the transaction
+            DB::commit();
+
+            return redirect()->route('inventory.index')->with('success', 'Inventory item updated successfully.');
+
+        } catch (\Exception $e) {
+            // Rollback the transaction if an error occurs
+            DB::rollback();
+
+            return redirect()->back()->with('error', 'Failed to update inventory item: ' . $e->getMessage())
+                ->withInput();
+        }
     }
 
     /**
@@ -62,6 +158,24 @@ class InventoryController extends Controller
      */
     public function destroy(Inventory $inventory)
     {
-        //
+        // Begin a transaction
+        DB::beginTransaction();
+
+        try {
+            // Soft delete the inventory item
+            $inventory->delete();
+
+            // Commit the transaction
+            DB::commit();
+
+            return redirect()->route('inventory.index')->with('success', 'Inventory item deleted successfully.');
+
+        } catch (\Exception $e) {
+            // Rollback the transaction if an error occurs
+            DB::rollback();
+
+            return redirect()->back()->with('error', 'Failed to delete inventory item: ' . $e->getMessage());
+        }
     }
 }
+
