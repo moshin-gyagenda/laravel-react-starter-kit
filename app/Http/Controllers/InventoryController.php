@@ -15,9 +15,7 @@ class InventoryController extends Controller
     public function index()
     {
         $inventories = Inventory::all();
-        return Inertia::render('inventory.index', [
-            'inventories' => $inventories
-        ]);
+        return Inertia::render('inventory/index', compact('inventories'));
     }
 
     /**
@@ -25,7 +23,7 @@ class InventoryController extends Controller
      */
     public function create()
     {
-        return Inertia::render('inventory.create');
+        return Inertia::render('inventory/create');
     }
 
     /**
@@ -33,19 +31,7 @@ class InventoryController extends Controller
      */
     public function store(Request $request)
     {
-        // Validate the request data
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'category' => 'nullable|string|max:255',
-            'packaging_type' => 'nullable|string|max:255',
-            'quantity' => 'required|integer|min:0',
-            'cost_price' => 'nullable|numeric|min:0',
-            'selling_price' => 'required|numeric|min:0',
-            'discount_price' => 'nullable|numeric|min:0',
-            'manufacturer' => 'nullable|string|max:255',
-            'status' => 'required|in:active,inactive,discontinued',
-        ]);
+        
 
         // Begin a transaction
         DB::beginTransaction();
@@ -86,9 +72,7 @@ class InventoryController extends Controller
      */
     public function show(Inventory $inventory)
     {
-        return Inertia::render('inventory.show', [
-            'inventory' => $inventory
-        ]);
+        return Inertia::render('inventory/show', compact('inventory'));
     }
 
     /**
@@ -96,9 +80,7 @@ class InventoryController extends Controller
      */
     public function edit(Inventory $inventory)
     {
-        return Inertia::render('inventory.edit', [
-            'inventory' => $inventory
-        ]);
+        return Inertia::render('inventory/edit', compact('inventory'));
     }
 
     /**
@@ -106,19 +88,7 @@ class InventoryController extends Controller
      */
     public function update(Request $request, Inventory $inventory)
     {
-        // Validate the request data
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'category' => 'nullable|string|max:255',
-            'packaging_type' => 'nullable|string|max:255',
-            'quantity' => 'required|integer|min:0',
-            'cost_price' => 'nullable|numeric|min:0',
-            'selling_price' => 'required|numeric|min:0',
-            'discount_price' => 'nullable|numeric|min:0',
-            'manufacturer' => 'nullable|string|max:255',
-            'status' => 'required|in:active,inactive,discontinued',
-        ]);
+       
 
         // Begin a transaction
         DB::beginTransaction();

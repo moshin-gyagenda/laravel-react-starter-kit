@@ -2,7 +2,7 @@
 import { PlaceholderPattern } from "@/components/ui/placeholder-pattern"
 import AppLayout from "@/layouts/app-layout"
 import type { BreadcrumbItem } from "@/types"
-import { Head } from "@inertiajs/react"
+import { Head, router } from "@inertiajs/react"
 import { Edit, MoreHorizontal, PlusCircle, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -91,9 +91,9 @@ export default function Inventory({ inventories = [] }: Props) {
           <CardContent>
             {inventories.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12">
-                <PlaceholderPattern className="h-48 w-48 text-muted-foreground/30" />
+                <PlaceholderPattern className="h-48 w-48 /30" />
                 <h3 className="mt-4 text-md font-medium">No inventory items</h3>
-                <p className="mt-2 text-sm text-muted-foreground text-center max-w-sm">
+                <p className="mt-2   text-center max-w-sm">
                   You don't have any inventory items yet. Add your first item to get started.
                 </p>
                 <Button asChild className="mt-4">
@@ -106,7 +106,7 @@ export default function Inventory({ inventories = [] }: Props) {
             ) : filteredInventories.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12">
                 <h3 className="mt-4 text-md font-medium">No matching items</h3>
-                <p className="mt-2 text-sm text-muted-foreground text-center max-w-sm">
+                <p className="mt-2   text-center max-w-sm">
                   No inventory items match your search criteria.
                 </p>
                 <Button variant="outline" className="mt-4" onClick={() => setSearchTerm("")}>
@@ -116,23 +116,25 @@ export default function Inventory({ inventories = [] }: Props) {
             ) : (
               <div className="overflow-x-auto border rounded-lg">
                 <table className="w-full border-collapse">
-                  <thead>
+                 <thead>
                     <tr className="border-b bg-muted/50">
-                      <th className="py-3 px-4 text-left font-medium text-muted-foreground">Name</th>
-                      <th className="py-3 px-4 text-left font-medium text-muted-foreground hidden md:table-cell">
+                        <th className="py-3 px-4 text-left font-medium  text-sm">ID</th>
+                        <th className="py-3 px-4 text-left font-medium  text-sm">Name</th>
+                        <th className="py-3 px-4 text-left font-medium  hidden md:table-cell text-sm">
                         Packaging Type
-                      </th>
-                      <th className="py-3 px-4 text-right font-medium text-muted-foreground">Quantity</th>
-                      <th className="py-3 px-4 text-left font-medium text-muted-foreground hidden lg:table-cell">
+                        </th>
+                        <th className="py-3 px-4 text-right font-medium  text-sm">Quantity</th>
+                        <th className="py-3 px-4 text-left font-medium  hidden lg:table-cell text-sm">
                         Cost Price
-                      </th>
-                      <th className="py-3 px-4 text-right font-medium text-muted-foreground">Selling Price</th>
-                      {/* <th className="py-3 px-4 text-left font-medium text-muted-foreground hidden md:table-cell">
+                        </th>
+                        <th className="py-3 px-4 text-right font-medium  text-sm">Selling Price</th>
+                        {/* <th className="py-3 px-4 text-left font-medium  hidden md:table-cell text-sm">
                         Manufacturer
-                      </th> */}
-                      <th className="py-3 px-4 w-[80px] text-center">Action</th>
+                        </th> */}
+                        <th className="py-3 px-4 w-[80px] text-center text-sm">Action</th>
                     </tr>
-                  </thead>
+                    </thead>
+
                   <tbody>
                     {filteredInventories.map((item, index) => (
                       <tr
@@ -140,18 +142,17 @@ export default function Inventory({ inventories = [] }: Props) {
                         className={`border-b hover:bg-muted/50 transition-colors ${
                           index % 2 === 0 ? "bg-white" : "bg-muted/20"
                         }`}
-                      >
+                        >
+                        <td className="py-3 px-4 hidden  text-sm lg:table-cell">{item.id}</td>
                         <td className="py-3 px-4">
-                          <div className="font-medium text-sm">
+                          <div className="font-medium text-sm ">
                             {item.name}
-                            {item.discount_price && (
-                              <Badge className="ml-2 bg-green-500 hover:bg-green-600">Sale</Badge>
-                            )}
+                           
                           </div>
-                          <div className="text-sm text-muted-foreground md:hidden">{item.packaging_type}</div>
+                          <div className="text-sm  md:hidden">{item.packaging_type}</div>
                         </td>
                         <td className="py-3 px-4 text-sm hidden md:table-cell">{item.packaging_type || "—"}</td>
-                        <td className="py-3 px-4 text-right">
+                        <td className="py-3 px-4 text-sm text-right">
                           <Badge variant={item.quantity > 10 ? "outline" : "destructive"}>{item.quantity}</Badge>
                         </td>
                         <td className="py-3 px-4 hidden text-sm lg:table-cell">{formatCurrency(item.cost_price)}</td>
@@ -160,26 +161,40 @@ export default function Inventory({ inventories = [] }: Props) {
                         </td>
                         {/* <td className="py-3 px-4 hidden md:table-cell">{item.manufacturer || "—"}</td> */}
                         <td className="py-3 px-4 text-center">
-                          <DropdownMenu>
+                            <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" className="h-8 w-8 p-0">
+                                <Button variant="ghost" className="h-8 w-8 p-0">
                                 <span className="sr-only">Open menu</span>
                                 <MoreHorizontal className="h-4 w-4" />
-                              </Button>
+                                </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem>
-                                <Edit className="mr-2 h-4 w-4" />
-                                Edit
-                              </DropdownMenuItem>
-                              <DropdownMenuItem className="text-destructive">
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Delete
-                              </DropdownMenuItem>
+                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem asChild>
+                                <a href={`/inventory/${item.id}/edit`} className="flex items-center cursor-pointer">
+                                    <Edit className="mr-2 h-4 w-4" />
+                                    Edit
+                                </a>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                <a
+                                    href={`/inventory/${item.id}`}
+                                    className="flex items-center text-destructive cursor-pointer"
+                                    onClick={(e) => {
+                                    e.preventDefault()
+                                    if (confirm("Are you sure you want to delete this item?")) {
+                                        // Using Inertia to handle the delete request
+                                        router.delete(`/inventory/${item.id}`)
+                                    }
+                                    }}
+                                >
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Delete
+                                </a>
+                                </DropdownMenuItem>
                             </DropdownMenuContent>
-                          </DropdownMenu>
+                            </DropdownMenu>
                         </td>
                       </tr>
                     ))}

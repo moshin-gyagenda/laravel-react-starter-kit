@@ -8,20 +8,9 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ArrowLeft, Save } from "lucide-react"
-
-const breadcrumbs: BreadcrumbItem[] = [
-  {
-    title: "Inventory",
-    href: "/inventory",
-  },
-  {
-    title: "Create",
-    href: "/inventory/create",
-  },
-]
+import { useEffect } from "react"
 
 interface InventoryFormData {
   name: string
@@ -33,37 +22,75 @@ interface InventoryFormData {
   selling_price: string
   discount_price: string
   manufacturer: string
+  status: string
   [key: string]: string | number
 }
 
-export default function CreateInventory() {
-  const { data, setData, post, processing, errors } = useForm<InventoryFormData>({
-    name: "",
-    description: "",
-    category: "",
-    packaging_type: "",
-    quantity: 0,
-    cost_price: "",
-    selling_price: "",
-    discount_price: "",
-    manufacturer: "",
+interface Props {
+  inventory: InventoryFormData & { id: number }
+}
+
+export default function EditInventory({ inventory }: Props) {
+  const breadcrumbs: BreadcrumbItem[] = [
+    {
+      title: "Inventory",
+      href: "/inventory",
+    },
+    {
+      title: inventory.name,
+      href: `/inventory/${inventory.id}`,
+    },
+    {
+      title: "Edit",
+      href: `/inventory/${inventory.id}/edit`,
+    },
+  ]
+
+  const { data, setData, put, processing, errors, reset } = useForm<InventoryFormData>({
+    name: inventory.name || "",
+    description: inventory.description || "",
+    category: inventory.category || "",
+    packaging_type: inventory.packaging_type || "",
+    quantity: inventory.quantity || 0,
+    cost_price: inventory.cost_price || "",
+    selling_price: inventory.selling_price || "",
+    discount_price: inventory.discount_price || "",
+    manufacturer: inventory.manufacturer || "",
+    status: inventory.status || "active",
   })
+
+  // Reset form when inventory changes
+  useEffect(() => {
+    setData({
+      name: inventory.name || "",
+      description: inventory.description || "",
+      category: inventory.category || "",
+      packaging_type: inventory.packaging_type || "",
+      quantity: inventory.quantity || 0,
+      cost_price: inventory.cost_price || "",
+      selling_price: inventory.selling_price || "",
+      discount_price: inventory.discount_price || "",
+      manufacturer: inventory.manufacturer || "",
+      status: inventory.status || "active",
+    })
+  }, [inventory, setData])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    post("/inventory")
+    put(`/inventory/${inventory.id}`)
   }
 
   const categoryOptions = ["Beverages", "Snacks", "Dairy", "Bakery", "Produce", "Meat", "Seafood", "Frozen Foods"]
   const packagingOptions = ["Bottle", "Can", "Box", "Bag", "Pouch", "Carton", "Jar", "Sachet", "Tetra Pack"]
+  const statusOptions = ["active", "inactive", "discontinued"]
 
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
-      <Head title="Create Inventory Item" />
+      <Head title={`Edit ${inventory.name}`} />
 
       <div className="container mx-auto py-6 px-4 sm:px-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-          <h1 className="text-xl font-bold">Create Inventory Item</h1>
+          <h1 className="text-xl font-bold">Edit Inventory Item</h1>
           <Button variant="outline" onClick={() => window.history.back()}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Inventory
@@ -73,10 +100,10 @@ export default function CreateInventory() {
         <form onSubmit={handleSubmit}>
           <Card>
             <CardHeader>
-              <CardTitle>Item Details</CardTitle>
-              <CardDescription>Enter the details of the new inventory item</CardDescription>
+              <CardTitle>Edit Item Details</CardTitle>
+              <CardDescription>Update the details of this inventory item</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {/* Column 1 - Basic Information */}
                 <div className="space-y-4">
@@ -95,18 +122,6 @@ export default function CreateInventory() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="description">Description</Label>
-                    <Textarea
-                      id="description"
-                      value={data.description}
-                      onChange={(e) => setData("description", e.target.value)}
-                      placeholder="Enter item description"
-                      rows={4}
-                    />
-                    {errors.description && <p className="text-sm text-destructive">{errors.description}</p>}
-                  </div>
-
-                  <div className="space-y-2">
                     <Label htmlFor="manufacturer">Manufacturer</Label>
                     <Input
                       id="manufacturer"
@@ -115,6 +130,23 @@ export default function CreateInventory() {
                       placeholder="Enter manufacturer name"
                     />
                     {errors.manufacturer && <p className="text-sm text-destructive">{errors.manufacturer}</p>}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="status">Status</Label>
+                    <Select value={data.status} onValueChange={(value) => setData("status", value)}>
+                      <SelectTrigger id="status">
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {statusOptions.map((status) => (
+                          <SelectItem key={status} value={status} className="capitalize">
+                            {status}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.status && <p className="text-sm text-destructive">{errors.status}</p>}
                   </div>
                 </div>
 
@@ -127,7 +159,7 @@ export default function CreateInventory() {
                         <SelectValue placeholder="Select category" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">None</SelectItem>
+                        <SelectItem value="none">None</SelectItem>
                         {categoryOptions.map((category) => (
                           <SelectItem key={category} value={category}>
                             {category}
@@ -145,7 +177,7 @@ export default function CreateInventory() {
                         <SelectValue placeholder="Select packaging type" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">None</SelectItem>
+                        <SelectItem value="none">None</SelectItem>
                         {packagingOptions.map((type) => (
                           <SelectItem key={type} value={type}>
                             {type}
@@ -222,6 +254,19 @@ export default function CreateInventory() {
                   </div>
                 </div>
               </div>
+
+              {/* Description Field - Full Width Row */}
+              <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <Input
+                  id="description"
+                  value={data.description}
+                  onChange={(e) => setData("description", e.target.value)}
+                  placeholder="Enter item description"
+                  className="min-h-[100px]"
+                />
+                {errors.description && <p className="text-sm text-destructive">{errors.description}</p>}
+              </div>
             </CardContent>
             <CardFooter className="flex justify-between">
               <Button variant="outline" type="button" onClick={() => window.history.back()}>
@@ -229,7 +274,7 @@ export default function CreateInventory() {
               </Button>
               <Button type="submit" disabled={processing}>
                 <Save className="mr-2 h-4 w-4" />
-                Save Item
+                Update Item
               </Button>
             </CardFooter>
           </Card>
