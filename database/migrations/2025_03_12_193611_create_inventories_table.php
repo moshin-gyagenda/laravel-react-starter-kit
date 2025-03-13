@@ -16,7 +16,6 @@ return new class extends Migration
             $table->foreignId('category_id')->nullable()->constrained()->nullOnDelete();
             $table->string('name');
             $table->text('description')->nullable();
-            $table->string('category')->nullable();
             $table->string('packaging_type')->nullable();    
             $table->integer('quantity')->default(0);
             $table->decimal('cost_price', 10, 2)->nullable();

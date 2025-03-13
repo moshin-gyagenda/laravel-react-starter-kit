@@ -38,6 +38,11 @@ const mainNavItems: NavItem[] = [
     url: "/inventory",
     icon: Package,
     
+    },
+  {
+    title: "Customer Management",
+    url: "/customers",
+    icon: Users,
   },
   {
     title: "Sales & Order Management",

@@ -36,11 +36,19 @@ interface InventoryFormData {
   [key: string]: string | number
 }
 
-export default function CreateInventory() {
+interface CreateInventoryProps {
+  categories: {
+    id: number
+    name: string
+    status: string
+  }[]
+}
+
+export default function CreateInventory({ categories }: CreateInventoryProps) {
   const { data, setData, post, processing, errors } = useForm<InventoryFormData>({
     name: "",
     description: "",
-    category: "",
+    category: "", 
     packaging_type: "",
     quantity: 0,
     cost_price: "",
@@ -52,10 +60,11 @@ export default function CreateInventory() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    post("/inventory")
+    post("/inventory/store")
   }
 
-  const categoryOptions = ["Beverages", "Snacks", "Dairy", "Bakery", "Produce", "Meat", "Seafood", "Frozen Foods"]
+  // Remove this line:
+  // const categoryOptions = ["Beverages", "Snacks", "Dairy", "Bakery", "Produce", "Meat", "Seafood", "Frozen Foods"]
   const packagingOptions = ["Bottle", "Can", "Box", "Bag", "Pouch", "Carton", "Jar", "Sachet", "Tetra Pack"]
   const statusOptions = ["active", "inactive", "discontinued"]
 
@@ -135,9 +144,9 @@ export default function CreateInventory() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="none">None</SelectItem>
-                        {categoryOptions.map((category) => (
-                          <SelectItem key={category} value={category}>
-                            {category}
+                        {categories.map((category) => (
+                          <SelectItem key={category.id} value={category.id.toString()}>
+                            {category.name}
                           </SelectItem>
                         ))}
                       </SelectContent>

@@ -15,7 +15,7 @@ import { useEffect } from "react"
 interface InventoryFormData {
   name: string
   description: string
-  category: string
+  category_id: number | null
   packaging_type: string
   quantity: number
   cost_price: string
@@ -23,14 +23,27 @@ interface InventoryFormData {
   discount_price: string
   manufacturer: string
   status: string
-  [key: string]: string | number
+  [key: string]: string | number | null
 }
 
 interface Props {
-  inventory: InventoryFormData & { id: number }
+  inventory: {
+    id: number
+    name: string
+    description: string
+    category_id: number | null
+    packaging_type: string
+    quantity: number
+    cost_price: string
+    selling_price: string
+    discount_price: string
+    manufacturer: string
+    status: string
+  }
+  categories: { id: number; name: string; status: string }[]
 }
 
-export default function EditInventory({ inventory }: Props) {
+export default function EditInventory({ inventory, categories }: Props) {
   const breadcrumbs: BreadcrumbItem[] = [
     {
       title: "Inventory",
@@ -49,7 +62,7 @@ export default function EditInventory({ inventory }: Props) {
   const { data, setData, put, processing, errors, reset } = useForm<InventoryFormData>({
     name: inventory.name || "",
     description: inventory.description || "",
-    category: inventory.category || "",
+    category_id: inventory.category_id,
     packaging_type: inventory.packaging_type || "",
     quantity: inventory.quantity || 0,
     cost_price: inventory.cost_price || "",
@@ -64,7 +77,7 @@ export default function EditInventory({ inventory }: Props) {
     setData({
       name: inventory.name || "",
       description: inventory.description || "",
-      category: inventory.category || "",
+      category_id: inventory.category_id,
       packaging_type: inventory.packaging_type || "",
       quantity: inventory.quantity || 0,
       cost_price: inventory.cost_price || "",
@@ -80,7 +93,6 @@ export default function EditInventory({ inventory }: Props) {
     put(`/inventory/${inventory.id}`)
   }
 
-  const categoryOptions = ["Beverages", "Snacks", "Dairy", "Bakery", "Produce", "Meat", "Seafood", "Frozen Foods"]
   const packagingOptions = ["Bottle", "Can", "Box", "Bag", "Pouch", "Carton", "Jar", "Sachet", "Tetra Pack"]
   const statusOptions = ["active", "inactive", "discontinued"]
 
@@ -153,31 +165,37 @@ export default function EditInventory({ inventory }: Props) {
                 {/* Column 2 - Classification */}
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="category">Category</Label>
-                    <Select value={data.category} onValueChange={(value) => setData("category", value)}>
-                      <SelectTrigger id="category">
+                    <Label htmlFor="category_id">Category</Label>
+                    <Select
+                      value={data.category_id?.toString() || ""}
+                      onValueChange={(value) => setData("category_id", value ? Number.parseInt(value) : null)}
+                    >
+                      <SelectTrigger id="category_id">
                         <SelectValue placeholder="Select category" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="none">None</SelectItem>
-                        {categoryOptions.map((category) => (
-                          <SelectItem key={category} value={category}>
-                            {category}
+                        <SelectItem value="-1">None</SelectItem>
+                        {categories.map((category) => (
+                          <SelectItem key={category.id} value={category.id.toString()}>
+                            {category.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                    {errors.category && <p className="text-sm text-destructive">{errors.category}</p>}
+                    {errors.category_id && <p className="text-sm text-destructive">{errors.category_id}</p>}
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="packaging_type">Packaging Type</Label>
-                    <Select value={data.packaging_type} onValueChange={(value) => setData("packaging_type", value)}>
+                    <Select
+                      value={data.packaging_type || "none"}
+                      onValueChange={(value) => setData("packaging_type", value === "none" ? "" : value)}
+                    >
                       <SelectTrigger id="packaging_type">
                         <SelectValue placeholder="Select packaging type" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="none">None</SelectItem>
+                        <SelectItem value="-1">None</SelectItem>
                         {packagingOptions.map((type) => (
                           <SelectItem key={type} value={type}>
                             {type}

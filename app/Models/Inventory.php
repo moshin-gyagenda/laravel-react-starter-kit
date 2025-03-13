@@ -12,7 +12,6 @@ class Inventory extends Model
         'name',
         'description',
         'packaging_type',
-        'category',
         'quantity',
         'cost_price',
         'selling_price',
@@ -20,4 +19,10 @@ class Inventory extends Model
         'manufacturer',
         'status'
     ];
+
+    // In your Inventory model
+    public function category()
+    {
+        return $this->belongsTo(Category::class);
+    }
 }

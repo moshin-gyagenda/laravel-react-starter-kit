@@ -12,4 +12,9 @@ class Category extends Model
         'description',
         'status',
     ];
+
+    public function inventories(): HasMany
+    {
+        return $this->hasMany(Inventory::class);
+    }
 }

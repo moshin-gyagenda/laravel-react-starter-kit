@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Inventory;
+use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -23,7 +24,11 @@ class InventoryController extends Controller
      */
     public function create()
     {
-        return Inertia::render('inventory/create');
+        $categories = Category::where('status', 'active')->orderBy('name')->get();
+        
+        return Inertia::render('inventory/create', [
+            'categories' => $categories
+        ]);
     }
 
     /**
@@ -41,7 +46,7 @@ class InventoryController extends Controller
             $inventory = new Inventory();
             $inventory->name = $request->name;
             $inventory->description = $request->description;
-            $inventory->category = $request->category === 'none' ? null : $request->category;
+            $inventory->category_id = $request->category === 'none' ? null : $request->category;
             $inventory->packaging_type = $request->packaging_type === 'none' ? null : $request->packaging_type;
             $inventory->quantity = $request->quantity;
             $inventory->cost_price = $request->cost_price;
@@ -80,7 +85,18 @@ class InventoryController extends Controller
      */
     public function edit(Inventory $inventory)
     {
-        return Inertia::render('inventory/edit', compact('inventory'));
+        // Eager load the category relationship
+        $inventory->load('category');
+        
+        // Get all active categories for the dropdown
+        $categories = Category::where('status', 'active')
+                            ->orderBy('name')
+                            ->get();
+        
+        return Inertia::render('inventory/edit', [
+            'inventory' => $inventory,
+            'categories' => $categories
+        ]);
     }
 
     /**
@@ -97,7 +113,7 @@ class InventoryController extends Controller
             // Update the inventory item
             $inventory->name = $request->name;
             $inventory->description = $request->description;
-            $inventory->category = $request->category === 'none' ? null : $request->category;
+            $inventory->category_id = $request->category === 'none' ? null : $request->category;
             $inventory->packaging_type = $request->packaging_type === 'none' ? null : $request->packaging_type;
             $inventory->quantity = $request->quantity;
             $inventory->cost_price = $request->cost_price;
