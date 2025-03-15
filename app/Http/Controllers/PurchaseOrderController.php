@@ -6,6 +6,7 @@ use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderItem;
 use App\Models\Inventory;
 use App\Models\Customer;
+use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -150,16 +151,24 @@ class PurchaseOrderController extends Controller
     /**
      * Display the specified purchase order.
      */
-    public function show($id)
+    public function show(PurchaseOrder $purchaseOrder)
     {
-        $purchaseOrder = PurchaseOrder::with([
-            'customer:id,first_name,last_name,company_name,email,phone,location',
-            'user:id,name,email',
-            'items.inventory:id,name,packaging_type,selling_price'
-        ])->findOrFail($id);
-
+        // Load the purchase order with all its relationships
+        $purchaseOrder->load([
+            'customer',
+            'user',
+            'items.inventory', // Load items with their inventory details
+        ]);
+        
+        // Get all payments related to this purchase order
+        $payments = Payment::where('purchase_order_id', $purchaseOrder->id)
+            ->orderBy('payment_date', 'desc')
+            ->get();
+        
+        // Return the Inertia view with the purchase order and payments data
         return Inertia::render('purchase-orders/show', [
-            'purchaseOrder' => $purchaseOrder
+            'purchaseOrder' => $purchaseOrder,
+            'payments' => $payments
         ]);
     }
 
@@ -185,127 +194,106 @@ class PurchaseOrderController extends Controller
     /**
      * Update the specified purchase order in storage.
      */
-    public function update(Request $request, $id)
-    {
-        $purchaseOrder = PurchaseOrder::findOrFail($id);
-
-        // Validate the main purchase order data
-        $validator = Validator::make($request->all(), [
-            'po_number' => 'required|string|unique:purchase_orders,po_number,' . $id,
-            'customer_id' => 'required|exists:customers,id',
-            'order_date' => 'required|date',
-            'payment_terms' => 'nullable|string',
-            'payment_status' => 'required|in:unpaid,partially_paid,paid',
-            'subtotal' => 'required|numeric|min:0',
-            'tax_amount' => 'required|numeric|min:0',
-            'shipping_cost' => 'required|numeric|min:0',
-            'discount_amount' => 'required|numeric|min:0',
-            'total_amount' => 'required|numeric|min:0',
-            'amount_paid' => 'required|numeric|min:0',
-            'balance_due' => 'required|numeric|min:0',
-            'items' => 'required|array|min:1',
-            'items.*.id' => 'nullable|exists:purchase_order_items,id',
-            'items.*.inventory_id' => 'required|exists:inventories,id',
-            'items.*.quantity' => 'required|numeric|min:0.01',
-            'items.*.unit' => 'nullable|string',
-            'items.*.unit_price' => 'required|numeric|min:0',
-            'items.*.tax_rate' => 'required|numeric|min:0',
-            'items.*.tax_amount' => 'required|numeric|min:0',
-            'items.*.discount_rate' => 'required|numeric|min:0',
-            'items.*.discount_amount' => 'required|numeric|min:0',
-            'items.*.subtotal' => 'required|numeric|min:0',
-            'items.*.total' => 'required|numeric|min:0',
-        ]);
-
-        if ($validator->fails()) {
-            return redirect()->back()
-                ->withErrors($validator)
-                ->withInput();
-        }
-
-        try {
-            // Start a database transaction
-            DB::beginTransaction();
-
-            // Update the purchase order
-            $purchaseOrder->update([
-                'po_number' => $request->po_number,
-                'customer_id' => $request->customer_id,
-                'order_date' => $request->order_date,
-                'payment_terms' => $request->payment_terms,
-                'payment_status' => $request->payment_status,
-                'subtotal' => $request->subtotal,
-                'tax_amount' => $request->tax_amount,
-                'shipping_cost' => $request->shipping_cost,
-                'discount_amount' => $request->discount_amount,
-                'total_amount' => $request->total_amount,
-                'amount_paid' => $request->amount_paid,
-                'balance_due' => $request->balance_due,
-            ]);
-
-            // Get existing item IDs
-            $existingItemIds = $purchaseOrder->items->pluck('id')->toArray();
-            $updatedItemIds = [];
-
-            // Update or create items
-            foreach ($request->items as $item) {
-                if (isset($item['id']) && $item['id']) {
-                    // Update existing item
-                    $orderItem = PurchaseOrderItem::findOrFail($item['id']);
-                    $orderItem->update([
-                        'inventory_id' => $item['inventory_id'],
-                        'quantity' => $item['quantity'],
-                        'unit' => $item['unit'],
-                        'unit_price' => $item['unit_price'],
-                        'tax_rate' => $item['tax_rate'],
-                        'tax_amount' => $item['tax_amount'],
-                        'discount_rate' => $item['discount_rate'],
-                        'discount_amount' => $item['discount_amount'],
-                        'subtotal' => $item['subtotal'],
-                        'total' => $item['total'],
-                    ]);
-                    $updatedItemIds[] = $item['id'];
-                } else {
-                    // Create new item
-                    $newItem = PurchaseOrderItem::create([
-                        'purchase_order_id' => $purchaseOrder->id,
-                        'inventory_id' => $item['inventory_id'],
-                        'quantity' => $item['quantity'],
-                        'unit' => $item['unit'],
-                        'unit_price' => $item['unit_price'],
-                        'tax_rate' => $item['tax_rate'],
-                        'tax_amount' => $item['tax_amount'],
-                        'discount_rate' => $item['discount_rate'],
-                        'discount_amount' => $item['discount_amount'],
-                        'subtotal' => $item['subtotal'],
-                        'total' => $item['total'],
-                    ]);
-                    $updatedItemIds[] = $newItem->id;
-                }
-            }
-
-            // Delete items that were removed
-            $itemsToDelete = array_diff($existingItemIds, $updatedItemIds);
-            if (!empty($itemsToDelete)) {
-                PurchaseOrderItem::whereIn('id', $itemsToDelete)->delete();
-            }
-
-            // Commit the transaction
-            DB::commit();
-
-            // Redirect with success message
-            return redirect()->route('purchase-orders.show', $purchaseOrder->id)
-                ->with('success', 'Purchase order updated successfully.');
-        } catch (\Exception $e) {
-            // Roll back the transaction in case of an error
-            DB::rollBack();
-
-            // Return with error message
-            return redirect()->back()
-                ->withInput()
-                ->with('error', 'Failed to update purchase order: ' . $e->getMessage());
-        }
-    }
+    public function update(Request $request, PurchaseOrder $purchaseOrder)
+  {
+      // Validate the request data
+      $validated = $request->validate([
+          'po_number' => 'required|string|max:255',
+          'customer_id' => 'required|exists:customers,id',
+          'order_date' => 'required|date',
+          'payment_terms' => 'required|string|max:255',
+          'payment_status' => 'required|string|in:unpaid,partially_paid,paid',
+          'subtotal' => 'required|numeric|min:0',
+          'tax_amount' => 'required|numeric|min:0',
+          'shipping_cost' => 'required|numeric|min:0',
+          'discount_amount' => 'required|numeric|min:0',
+          'total_amount' => 'required|numeric|min:0',
+          'items' => 'required|array|min:1',
+          'items.*.inventory_id' => 'required|exists:inventories,id',
+          'items.*.quantity' => 'required|numeric|min:0.01',
+          'items.*.unit' => 'required|string|max:50',
+          'items.*.unit_price' => 'required|numeric|min:0',
+          'items.*.tax_rate' => 'required|numeric|min:0',
+          'items.*.tax_amount' => 'required|numeric|min:0',
+          'items.*.discount_rate' => 'required|numeric|min:0',
+          'items.*.discount_amount' => 'required|numeric|min:0',
+          'items.*.subtotal' => 'required|numeric|min:0',
+          'items.*.total' => 'required|numeric|min:0',
+      ]);
+      
+      // Begin database transaction
+      DB::beginTransaction();
+      
+      try {
+          // Store the original total amount for comparison
+          $originalTotalAmount = $purchaseOrder->total_amount;
+          $amountPaid = $purchaseOrder->amount_paid;
+          
+          // Update the purchase order
+          $purchaseOrder->po_number = $validated['po_number'];
+          $purchaseOrder->customer_id = $validated['customer_id'];
+          $purchaseOrder->order_date = $validated['order_date'];
+          $purchaseOrder->payment_terms = $validated['payment_terms'];
+          $purchaseOrder->payment_status = $validated['payment_status'];
+          $purchaseOrder->subtotal = $validated['subtotal'];
+          $purchaseOrder->tax_amount = $validated['tax_amount'];
+          $purchaseOrder->shipping_cost = $validated['shipping_cost'];
+          $purchaseOrder->discount_amount = $validated['discount_amount'];
+          $purchaseOrder->total_amount = $validated['total_amount'];
+          
+          // Recalculate balance due based on the new total and existing payments
+          $purchaseOrder->balance_due = max(0, $validated['total_amount'] - $amountPaid);
+          
+          // Update payment status based on balance due and amount paid
+          if ($purchaseOrder->balance_due <= 0) {
+              $purchaseOrder->payment_status = 'paid';
+          } elseif ($amountPaid > 0) {
+              $purchaseOrder->payment_status = 'partially_paid';
+          } else {
+              $purchaseOrder->payment_status = 'unpaid';
+          }
+          
+          // Save the purchase order
+          $purchaseOrder->save();
+          
+          // Delete existing purchase order items
+          $purchaseOrder->items()->delete();
+          
+          // Create new purchase order items
+          foreach ($validated['items'] as $item) {
+              // Create the new item
+              $orderItem = new PurchaseOrderItem([
+                  'purchase_order_id' => $purchaseOrder->id,
+                  'inventory_id' => $item['inventory_id'],
+                  'quantity' => $item['quantity'],
+                  'unit' => $item['unit'],
+                  'unit_price' => $item['unit_price'],
+                  'tax_rate' => $item['tax_rate'],
+                  'tax_amount' => $item['tax_amount'],
+                  'discount_rate' => $item['discount_rate'],
+                  'discount_amount' => $item['discount_amount'],
+                  'subtotal' => $item['subtotal'],
+                  'total' => $item['total'],
+              ]);
+              
+              $orderItem->save();
+          }
+          
+          // Commit the transaction
+          DB::commit();
+          
+          return redirect()->route('purchase-orders.show', $purchaseOrder->id)
+              ->with('success', 'Purchase order updated successfully.');
+              
+      } catch (Exception $e) {
+          // Roll back the transaction on error
+          DB::rollBack();
+          
+          return redirect()->back()
+              ->withInput()
+              ->with('error', 'Failed to update purchase order: ' . $e->getMessage());
+      }
+  }
 
     /**
      * Remove the specified purchase order from storage.

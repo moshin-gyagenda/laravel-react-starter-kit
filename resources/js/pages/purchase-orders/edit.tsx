@@ -12,7 +12,6 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { ArrowLeft, Plus, Save, Trash2, ChevronDown, ChevronUp } from "lucide-react"
-import { format } from "date-fns"
 import { Badge } from "@/components/ui/badge"
 import TopNav from "@/components/top-nav"
 
@@ -22,17 +21,6 @@ interface PageProps {
   }
   [key: string]: any
 }
-
-const breadcrumbs: BreadcrumbItem[] = [
-  {
-    title: "Purchase Orders",
-    href: "/purchase-orders",
-  },
-  {
-    title: "Create",
-    href: "/purchase-orders/create",
-  },
-]
 
 interface PurchaseOrderFormData {
   po_number: string
@@ -66,48 +54,89 @@ interface PurchaseOrderItem {
   [key: string]: string | number | undefined
 }
 
-interface CreatePurchaseOrderProps {
-  customers: {
-    id: number
-    first_name: string
-    last_name: string
-    company_name: string
-    email: string
-    phone: string
-    location: string
-  }[]
-  inventories: {
-    id: number
-    name: string
-    packaging_type: string
-    selling_price: number
-    cost_price: number
-    quantity: number
-    status: string
-  }[]
+interface Customer {
+  id: number
+  first_name: string
+  last_name: string
+  company_name: string | null
+  email: string | null
+  phone: string | null
+  location: string | null
 }
 
-export default function CreatePurchaseOrder({ customers, inventories }: CreatePurchaseOrderProps) {
+interface Inventory {
+  id: number
+  name: string
+  packaging_type: string
+  selling_price: number
+  cost_price: number
+  quantity: number
+  status: string
+}
+
+interface PurchaseOrder {
+  id: number
+  po_number: string
+  customer_id: number
+  order_date: string
+  payment_terms: string
+  payment_status: string
+  subtotal: number
+  tax_amount: number
+  shipping_cost: number
+  discount_amount: number
+  total_amount: number
+  amount_paid: number
+  balance_due: number
+  customer: Customer
+  items: PurchaseOrderItem[]
+}
+
+interface EditPurchaseOrderProps {
+  purchaseOrder: PurchaseOrder
+  customers: Customer[]
+  inventories: Inventory[]
+}
+
+export default function EditPurchaseOrder({ purchaseOrder, customers, inventories }: EditPurchaseOrderProps) {
   const { auth } = usePage<PageProps>().props
   const [items, setItems] = useState<PurchaseOrderItem[]>([])
-  const [selectedCustomer, setSelectedCustomer] = useState<(typeof customers)[0] | null>(null)
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
   const [expandedItems, setExpandedItems] = useState<number[]>([])
-  const today = format(new Date(), "yyyy-MM-dd")
 
-  const { data, setData, post, processing, errors } = useForm<PurchaseOrderFormData>({
-    po_number: "",
-    customer_id: "",
-    order_date: today,
-    payment_terms: "Due on Receipt",
-    payment_status: "unpaid",
-    subtotal: 0,
-    tax_amount: 0,
-    shipping_cost: 0,
-    discount_amount: 0,
-    total_amount: 0,
-    balance_due: 0,
+  // Initialize form with existing purchase order data
+  const { data, setData, put, processing, errors } = useForm<PurchaseOrderFormData>({
+    po_number: purchaseOrder.po_number,
+    customer_id: purchaseOrder.customer_id.toString(),
+    order_date: purchaseOrder.order_date,
+    payment_terms: purchaseOrder.payment_terms,
+    payment_status: purchaseOrder.payment_status,
+    subtotal: purchaseOrder.subtotal,
+    tax_amount: purchaseOrder.tax_amount,
+    shipping_cost: purchaseOrder.shipping_cost,
+    discount_amount: purchaseOrder.discount_amount,
+    total_amount: purchaseOrder.total_amount,
+    balance_due: purchaseOrder.balance_due,
     items: [],
   })
+
+  // Initialize items state with existing purchase order items
+  useEffect(() => {
+    if (purchaseOrder.items && purchaseOrder.items.length > 0) {
+      // Map the items to ensure they have the correct format
+      const formattedItems = purchaseOrder.items.map((item) => ({
+        ...item,
+        inventory_id: item.inventory_id.toString(),
+        inventory_name: inventories.find((inv) => inv.id === Number(item.inventory_id))?.name,
+      }))
+      setItems(formattedItems)
+    }
+  }, [purchaseOrder.items, inventories])
+
+  // Set the selected customer based on the purchase order
+  useEffect(() => {
+    setSelectedCustomer(purchaseOrder.customer)
+  }, [purchaseOrder.customer])
 
   // Update selected customer when customer_id changes
   useEffect(() => {
@@ -129,6 +158,21 @@ export default function CreatePurchaseOrder({ customers, inventories }: CreatePu
     setData("items", items)
   }, [items])
 
+  const breadcrumbs: BreadcrumbItem[] = [
+    {
+      title: "Purchase Orders",
+      href: "/purchase-orders",
+    },
+    {
+      title: purchaseOrder.po_number,
+      href: `/purchase-orders/${purchaseOrder.id}/show`,
+    },
+    {
+      title: "Edit",
+      href: `/purchase-orders/${purchaseOrder.id}/edit`,
+    },
+  ]
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -138,8 +182,8 @@ export default function CreatePurchaseOrder({ customers, inventories }: CreatePu
     // Log what's being submitted for debugging
     console.log("Submitting data:", data)
 
-    // Use the post method without additional parameters
-    post("/purchase-orders/store")
+    // Use the put method to update the purchase order
+    put(`/purchase-orders/${purchaseOrder.id}/update`)
   }
 
   const addItem = () => {
@@ -187,7 +231,6 @@ export default function CreatePurchaseOrder({ customers, inventories }: CreatePu
       if (inventory) {
         updatedItems[index].unit = inventory.packaging_type || "pcs"
         updatedItems[index].unit_price = inventory.selling_price
-        updatedItems[index].tax_rate = 0 // Default tax rate
         updatedItems[index].inventory_name = inventory.name
       }
     }
@@ -213,7 +256,10 @@ export default function CreatePurchaseOrder({ customers, inventories }: CreatePu
     const discountAmount = currentItems.reduce((sum, item) => sum + Number(item.discount_amount), 0)
     const shippingCost = Number(data.shipping_cost) || 0
     const totalAmount = subtotal + taxAmount - discountAmount + shippingCost
-    const balanceDue = totalAmount // No amount_paid, so balance_due equals total_amount
+
+    // For edit, we need to consider the amount already paid
+    const amountPaid = purchaseOrder.amount_paid || 0
+    const balanceDue = Math.max(0, totalAmount - amountPaid)
 
     setData({
       ...data,
@@ -222,7 +268,7 @@ export default function CreatePurchaseOrder({ customers, inventories }: CreatePu
       discount_amount: discountAmount,
       total_amount: totalAmount,
       balance_due: balanceDue,
-      items: currentItems, // Make sure items are included in the form data
+      items: currentItems,
     })
   }
 
@@ -238,14 +284,14 @@ export default function CreatePurchaseOrder({ customers, inventories }: CreatePu
     <>
       <TopNav user={auth.user} />
       <AppLayout breadcrumbs={breadcrumbs}>
-        <Head title="Create Purchase Order" />
+        <Head title={`Edit Purchase Order: ${purchaseOrder.po_number}`} />
 
         <div className="container mx-auto py-4 px-4 sm:py-6 sm:px-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-            <h1 className="text-xl font-bold">Create Purchase Order</h1>
+            <h1 className="text-xl font-bold">Edit Purchase Order: {purchaseOrder.po_number}</h1>
             <Button variant="outline" onClick={() => window.history.back()} className="w-full sm:w-auto">
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Purchase Orders
+              Back to Purchase Order
             </Button>
           </div>
 
@@ -322,7 +368,7 @@ export default function CreatePurchaseOrder({ customers, inventories }: CreatePu
               <Card>
                 <CardHeader>
                   <CardTitle>Order Details</CardTitle>
-                  <CardDescription>Enter the basic information for this purchase order</CardDescription>
+                  <CardDescription>Edit the basic information for this purchase order</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -425,7 +471,7 @@ export default function CreatePurchaseOrder({ customers, inventories }: CreatePu
                 <CardHeader className="flex flex-row items-center justify-between">
                   <div>
                     <CardTitle>Order Items</CardTitle>
-                    <CardDescription>Add items to this purchase order</CardDescription>
+                    <CardDescription>Edit items in this purchase order</CardDescription>
                   </div>
                   <Button type="button" onClick={addItem}>
                     <Plus className="mr-2 h-4 w-4" />
@@ -727,6 +773,14 @@ export default function CreatePurchaseOrder({ customers, inventories }: CreatePu
                       <span>Total Amount:</span>
                       <span>{data.total_amount.toFixed(2)}</span>
                     </div>
+                    <div className="flex justify-between pt-2">
+                      <span className="text-muted-foreground">Amount Paid:</span>
+                      <span>{purchaseOrder.amount_paid.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between font-medium text-primary">
+                      <span>Balance Due:</span>
+                      <span>{data.balance_due.toFixed(2)}</span>
+                    </div>
                   </div>
                 </CardContent>
                 <CardFooter className="flex flex-col sm:flex-row gap-3 sm:justify-between">
@@ -744,7 +798,7 @@ export default function CreatePurchaseOrder({ customers, inventories }: CreatePu
                     className="w-full sm:w-auto order-1 sm:order-2"
                   >
                     <Save className="mr-2 h-4 w-4" />
-                    Save Purchase Order
+                    Update Purchase Order
                   </Button>
                 </CardFooter>
               </Card>

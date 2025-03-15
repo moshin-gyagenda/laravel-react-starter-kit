@@ -53,7 +53,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Payment routes
     Route::prefix('payments')->group(function () {
         Route::get('/', [PaymentController::class, 'index'])->name('payments.index');
-        Route::get('/create', [PaymentController::class, 'create'])->name('payments.create');
+        Route::get('/create/{purchaseOrderId}', [PaymentController::class, 'create'])->name('payments.create');
         Route::post('/store', [PaymentController::class, 'store'])->name('payments.store');
         Route::get('/{payment}/show', [PaymentController::class, 'show'])->name('payments.show');
         Route::get('/{payment}/edit', [PaymentController::class, 'edit'])->name('payments.edit');
