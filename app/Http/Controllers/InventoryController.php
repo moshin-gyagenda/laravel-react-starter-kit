@@ -26,9 +26,7 @@ class InventoryController extends Controller
     {
         $categories = Category::where('status', 'active')->orderBy('name')->get();
         
-        return Inertia::render('inventory/create', [
-            'categories' => $categories
-        ]);
+        return Inertia::render('inventory/create', compact('categories'));
     }
 
     /**

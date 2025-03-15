@@ -11,20 +11,20 @@ class PurchaseOrderItem extends Model
     use HasFactory;
     
     protected $fillable = [
-        'purchase_order_id',
-        'inventory_id',
-        'quantity',
-        'unit',
-        'unit_price',
-        'tax_rate',
-        'tax_amount',
-        'discount_rate',
-        'discount_amount',
-        'subtotal',
-        'total',
-    ];
+    'purchase_order_id',
+    'inventory_id',
+    'quantity',
+    'unit',
+    'unit_price',
+    'tax_rate',
+    'tax_amount',
+    'discount_rate',
+    'discount_amount',
+    'subtotal',
+    'total',
+];
 
-    public function purchaseOrder(): BelongsTo
+    public function purchaseOrder()
     {
         return $this->belongsTo(PurchaseOrder::class);
     }

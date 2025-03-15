@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('po_number')->unique();
             $table->foreignId('user_id')->constrained('users')->onDelete('restrict');
             $table->foreignId('customer_id')->nullable()->constrained('customers')->nullOnDelete();
-            $table->date('order_date');
+            $table->string('order_date');
             $table->decimal('subtotal', 10, 2)->default(0);
             $table->decimal('tax_amount', 10, 2)->default(0);
             $table->decimal('shipping_cost', 10, 2)->default(0);

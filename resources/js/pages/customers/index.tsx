@@ -3,7 +3,7 @@ import { PlaceholderPattern } from "@/components/ui/placeholder-pattern"
 import AppLayout from "@/layouts/app-layout"
 import type { BreadcrumbItem } from "@/types"
 import { Head, router } from "@inertiajs/react"
-import { Edit, MoreHorizontal, PlusCircle, Trash2 } from "lucide-react"
+import { Edit, MoreHorizontal, PlusCircle, Trash2, UserCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -88,7 +88,7 @@ export default function Customers({ customers = [] }: Props) {
       <div className="container mx-auto py-6 px-4 sm:px-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <h1 className="text-xl font-bold">Customer Management</h1>
-          <Button asChild>
+          <Button asChild className="w-full sm:w-auto">
             <a href="/customers/create">
               <PlusCircle className="mr-2 h-4 w-4" />
               Add Customer
@@ -121,7 +121,7 @@ export default function Customers({ customers = [] }: Props) {
                 <p className="mt-2 text-center max-w-sm">
                   You don't have any customers yet. Add your first customer to get started.
                 </p>
-                <Button asChild className="mt-4">
+                <Button asChild className="mt-4 w-full sm:w-auto">
                   <a href="/customers/create">
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Add Your First Customer
@@ -132,96 +132,169 @@ export default function Customers({ customers = [] }: Props) {
               <div className="flex flex-col items-center justify-center py-12">
                 <h3 className="mt-4 text-md font-medium">No matching customers</h3>
                 <p className="mt-2 text-center max-w-sm">No customers match your search criteria.</p>
-                <Button variant="outline" className="mt-4" onClick={() => setSearchTerm("")}>
+                <Button variant="outline" className="mt-4 w-full sm:w-auto" onClick={() => setSearchTerm("")}>
                   Clear Search
                 </Button>
               </div>
             ) : (
-              <div className="overflow-x-auto border rounded-lg">
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="border-b bg-muted/50">
-                      <th className="py-3 px-4 text-left font-medium text-sm">ID</th>
-                      <th className="py-3 px-4 text-left font-medium text-sm">Name</th>
-                      <th className="py-3 px-4 text-left font-medium hidden md:table-cell text-sm">Contact</th>
-                      <th className="py-3 px-4 text-left font-medium hidden lg:table-cell text-sm">Company</th>
-                      <th className="py-3 px-4 text-center font-medium text-sm">Type</th>
-                      <th className="py-3 px-4 text-center font-medium text-sm">Status</th>
-                      <th className="py-3 px-4 text-right font-medium hidden md:table-cell text-sm">Balance</th>
-                      <th className="py-3 px-4 w-[80px] text-center text-sm">Action</th>
-                    </tr>
-                  </thead>
+              <div>
+                {/* Desktop view - Table */}
+                <div className="hidden sm:block overflow-x-auto border rounded-lg">
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="border-b bg-muted/50">
+                        <th className="py-3 px-4 text-left font-medium text-sm">ID</th>
+                        <th className="py-3 px-4 text-left font-medium text-sm">Name</th>
+                        <th className="py-3 px-4 text-left font-medium hidden md:table-cell text-sm">Contact</th>
+                        <th className="py-3 px-4 text-left font-medium hidden lg:table-cell text-sm">Company</th>
+                        <th className="py-3 px-4 text-center font-medium text-sm">Type</th>
+                        <th className="py-3 px-4 text-center font-medium text-sm">Status</th>
+                        <th className="py-3 px-4 text-right font-medium hidden md:table-cell text-sm">Balance</th>
+                        <th className="py-3 px-4 w-[80px] text-center text-sm">Action</th>
+                      </tr>
+                    </thead>
 
-                  <tbody>
-                    {filteredCustomers.map((customer, index) => (
-                      <tr
-                        key={customer.id}
-                        className={`border-b hover:bg-muted/50 transition-colors ${
-                          index % 2 === 0 ? "bg-white" : "bg-muted/20"
-                        }`}
-                      >
-                        <td className="py-3 px-4 hidden text-sm lg:table-cell">{customer.id}</td>
-                        <td className="py-3 px-4">
-                          <div className="font-medium text-sm">
+                    <tbody>
+                      {filteredCustomers.map((customer, index) => (
+                        <tr
+                          key={customer.id}
+                          className={`border-b hover:bg-muted/50 transition-colors ${
+                            index % 2 === 0 ? "bg-white" : "bg-muted/20"
+                          }`}
+                        >
+                          <td className="py-3 px-4 text-sm">{customer.id}</td>
+                          <td className="py-3 px-4">
+                            <div className="font-medium text-sm">
+                              {customer.first_name} {customer.last_name}
+                            </div>
+                          </td>
+                          <td className="py-3 px-4 text-sm hidden md:table-cell">
+                            <div>{customer.email || "—"}</div>
+                            <div className="text-muted-foreground">{customer.phone || "—"}</div>
+                          </td>
+                          <td className="py-3 px-4 text-sm hidden lg:table-cell">
+                            {customer.company_name || "—"}
+                            {customer.location && (
+                              <div className="text-xs text-muted-foreground">{customer.location}</div>
+                            )}
+                          </td>
+                          <td className="py-3 px-4 text-sm text-center capitalize">{customer.type}</td>
+                          <td className="py-3 px-4 text-sm text-center">{getStatusBadge(customer.status)}</td>
+                          <td className="py-3 px-4 text-sm hidden md:table-cell text-right">
+                            {formatCurrency(customer.outstanding_balance)}
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" className="h-8 w-8 p-0">
+                                  <span className="sr-only">Open menu</span>
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem asChild>
+                                  <a
+                                    href={`/customers/${customer.id}/edit`}
+                                    className="flex items-center cursor-pointer"
+                                  >
+                                    <Edit className="mr-2 h-4 w-4" />
+                                    Edit
+                                  </a>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                  <a
+                                    href={`/customers/${customer.id}`}
+                                    className="flex items-center text-destructive cursor-pointer"
+                                    onClick={(e) => {
+                                      e.preventDefault()
+                                      if (confirm("Are you sure you want to delete this customer?")) {
+                                        router.delete(`/customers/${customer.id}/delete`)
+                                      }
+                                    }}
+                                  >
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Delete
+                                  </a>
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile view - Cards */}
+                <div className="grid gap-4 sm:hidden">
+                  {filteredCustomers.map((customer) => (
+                    <div key={customer.id} className="border rounded-lg p-4 bg-card">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <div className="font-medium flex items-center gap-2">
+                            <UserCircle className="h-4 w-4 text-muted-foreground" />
                             {customer.first_name} {customer.last_name}
                           </div>
-                          <div className="text-sm text-muted-foreground md:hidden">{customer.email}</div>
-                        </td>
-                        <td className="py-3 px-4 text-sm hidden md:table-cell">
-                          <div>{customer.email || "—"}</div>
-                          <div className="text-muted-foreground">{customer.phone || "—"}</div>
-                        </td>
-                        <td className="py-3 px-4 text-sm hidden lg:table-cell">
-                          {customer.company_name || "—"}
-                          {customer.location && (
-                            <div className="text-xs text-muted-foreground">{customer.location}</div>
-                          )}
-                        </td>
-                        <td className="py-3 px-4 text-sm text-center capitalize">{customer.type}</td>
-                        <td className="py-3 px-4 text-sm text-center">{getStatusBadge(customer.status)}</td>
-                        <td className="py-3 px-4 hidden text-sm md:table-cell text-right">
-                          {formatCurrency(customer.outstanding_balance)}
-                        </td>
-                        <td className="py-3 px-4 text-center">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" className="h-8 w-8 p-0">
-                                <span className="sr-only">Open menu</span>
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem asChild>
-                                <a href={`/customers/${customer.id}/edit`} className="flex items-center cursor-pointer">
-                                  <Edit className="mr-2 h-4 w-4" />
-                                  Edit
-                                </a>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem asChild>
-                                <a
-                                  href={`/customers/${customer.id}`}
-                                  className="flex items-center text-destructive cursor-pointer"
-                                  onClick={(e) => {
-                                    e.preventDefault()
-                                    if (confirm("Are you sure you want to delete this customer?")) {
-                                      // Using Inertia to handle the delete request
-                                      router.delete(`/customers/${customer.id}/delete`)
-                                    }
-                                  }}
-                                >
-                                  <Trash2 className="mr-2 h-4 w-4" />
-                                  Delete
-                                </a>
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                          {customer.email && <div className="text-sm text-muted-foreground mt-1">{customer.email}</div>}
+                        </div>
+                        <div>{getStatusBadge(customer.status)}</div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 text-sm my-3">
+                        {customer.phone && (
+                          <div>
+                            <div className="text-muted-foreground">Phone:</div>
+                            <div>{customer.phone}</div>
+                          </div>
+                        )}
+                        <div>
+                          <div className="text-muted-foreground">Type:</div>
+                          <div className="capitalize">{customer.type}</div>
+                        </div>
+                        {customer.company_name && (
+                          <div className="col-span-2">
+                            <div className="text-muted-foreground">Company:</div>
+                            <div>{customer.company_name}</div>
+                          </div>
+                        )}
+                        {customer.location && (
+                          <div className="col-span-2">
+                            <div className="text-muted-foreground">Location:</div>
+                            <div>{customer.location}</div>
+                          </div>
+                        )}
+                        <div className="col-span-2">
+                          <div className="text-muted-foreground">Outstanding Balance:</div>
+                          <div className="font-medium">{formatCurrency(customer.outstanding_balance)}</div>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2 justify-end mt-2">
+                        <Button variant="outline" size="sm" asChild>
+                          <a href={`/customers/${customer.id}/edit`}>
+                            <Edit className="mr-1 h-3 w-3" />
+                            Edit
+                          </a>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-destructive border-destructive hover:bg-destructive/10"
+                          onClick={() => {
+                            if (confirm("Are you sure you want to delete this customer?")) {
+                              router.delete(`/customers/${customer.id}/delete`)
+                            }
+                          }}
+                        >
+                          <Trash2 className="mr-1 h-3 w-3" />
+                          Delete
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </CardContent>

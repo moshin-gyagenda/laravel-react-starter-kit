@@ -46,12 +46,12 @@ const mainNavItems: NavItem[] = [
   },
   {
     title: "Sales & Order Management",
-    url: "",
+    url: "/purchase-orders",
     icon: ShoppingCart,
   },
   {
     title: "Payment & Transaction",
-    url: "",
+    url: "/payments",
     icon: CreditCard,
   },
   {
